@@ -103,7 +103,7 @@ type Encoder interface {
 	Encode(e any) error
 }
 
-func encode(encoder NewEncoder, next Reader, p LineParser[interface{}]) Reader {
+func ParseLineToCustomEncoder(encoder NewEncoder, next Reader, p LineParser[interface{}]) Reader {
 	return func(r io.Reader) error {
 		scanner := bufio.NewScanner(r)
 		reader, writer := io.Pipe()
@@ -132,25 +132,13 @@ func encode(encoder NewEncoder, next Reader, p LineParser[interface{}]) Reader {
 	}
 }
 
-func ParseLineToGob(next Reader, p LineParser[interface{}]) Reader {
-	return encode(func(w io.Writer) Encoder {
-		return gob.NewEncoder(w)
-	}, next, p)
-}
-
-func ParseLineToJson(next Reader, p LineParser[interface{}]) Reader {
-	return encode(func(w io.Writer) Encoder {
-		return json.NewEncoder(w)
-	}, next, p)
-}
-
 type NewDecoder func(r io.Reader) Decoder
 
 type Decoder interface {
 	Decode(e any) error
 }
 
-func decode[I any](decoder NewDecoder, consumer func(*I) []byte) Processor {
+func Decode[I any](decoder NewDecoder, consumer func(*I) []byte) Processor {
 	return func(next Reader) Reader {
 		return func(r io.Reader) error {
 			decoder := decoder(r)
@@ -179,13 +167,13 @@ func decode[I any](decoder NewDecoder, consumer func(*I) []byte) Processor {
 }
 
 func DecodeGob[I any](consumer func(*I) []byte) Processor {
-	return decode(func(r io.Reader) Decoder {
+	return Decode(func(r io.Reader) Decoder {
 		return gob.NewDecoder(r)
 	}, consumer)
 }
 
 func DecodeJson[I any](consumer func(*I) []byte) Processor {
-	return decode(func(r io.Reader) Decoder {
+	return Decode(func(r io.Reader) Decoder {
 		return json.NewDecoder(r)
 	}, consumer)
 }

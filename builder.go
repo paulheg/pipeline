@@ -28,6 +28,7 @@ type InputBuilder interface {
 	ParseLines(parser LineParser[[]byte]) InputBuilder
 	ParseLinesToGob(parser LineParser[interface{}]) InputBuilder
 	ParseLinesToJson(parser LineParser[interface{}]) InputBuilder
+	ParseLinesToCustomEncoder(encoder NewEncoder, parser LineParser[interface{}]) InputBuilder
 
 	Fanout() FanoutBuilder
 

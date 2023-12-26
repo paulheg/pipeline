@@ -1,6 +1,10 @@
 package pipeline
 
-import "io"
+import (
+	"encoding/gob"
+	"encoding/json"
+	"io"
+)
 
 var _ InputBuilder = &inputBuilder{}
 var _ Builder = &inputBuilder{}
@@ -9,30 +13,22 @@ type inputBuilder struct {
 	inputStrategyWithSize consumeReaderWithSize
 	progressBar           ProgressBarRegistrator
 
-	lineParser     LineParser[[]byte]
-	lineParserGob  LineParser[interface{}]
-	lineParserJson LineParser[interface{}]
+	lineParser LineParser[[]byte]
+
+	parser  LineParser[interface{}]
+	encoder NewEncoder
 
 	gzipDecompress bool
 }
 
-// ParseLinesToJson implements InputBuilder.
-func (i *inputBuilder) ParseLinesToJson(parser LineParser[interface{}]) InputBuilder {
-	i.lineParserJson = parser
-	return i
-}
-
 func (i *inputBuilder) build(next Reader) ReaderWithSize {
+
+	if i.encoder != nil && i.parser != nil {
+		next = ParseLineToCustomEncoder(i.encoder, next, i.parser)
+	}
+
 	if i.lineParser != nil {
 		next = ParseLine(next, i.lineParser)
-	}
-
-	if i.lineParserJson != nil {
-		next = ParseLineToJson(next, i.lineParserJson)
-	}
-
-	if i.lineParserGob != nil {
-		next = ParseLineToGob(next, i.lineParserGob)
 	}
 
 	if i.gzipDecompress {
@@ -51,9 +47,30 @@ func (i *inputBuilder) build(next Reader) ReaderWithSize {
 	return runWithSize
 }
 
+// ParseLinesToCustomEncoder implements InputBuilder.
+func (i *inputBuilder) ParseLinesToCustomEncoder(encoder NewEncoder, parser LineParser[interface{}]) InputBuilder {
+	i.encoder = encoder
+	i.parser = parser
+
+	return i
+}
+
+// ParseLinesToJson implements InputBuilder.
+func (i *inputBuilder) ParseLinesToJson(parser LineParser[interface{}]) InputBuilder {
+	i.encoder = func(w io.Writer) Encoder {
+		return json.NewEncoder(w)
+	}
+	i.parser = parser
+
+	return i
+}
+
 // ParseLinesToGob implements InputBuilder.
 func (i *inputBuilder) ParseLinesToGob(parser LineParser[interface{}]) InputBuilder {
-	i.lineParserGob = parser
+	i.encoder = func(w io.Writer) Encoder {
+		return gob.NewEncoder(w)
+	}
+	i.parser = parser
 
 	return i
 }
