@@ -212,7 +212,7 @@ func DecodeJson[I any](consumer func(*I) []byte) Processor {
 	}
 }
 
-func ParseLine(next Reader, p LineParser[string]) Reader {
+func ParseLine(next Reader, p LineParser[[]byte]) Reader {
 	return func(r io.Reader) error {
 		scanner := bufio.NewScanner(r)
 		reader, writer := io.Pipe()
@@ -224,7 +224,7 @@ func ParseLine(next Reader, p LineParser[string]) Reader {
 
 				parsed, err := p(line)
 				if err != nil {
-					// write error
+					log.Printf("error while parsing: %v", err)
 				}
 
 				writer.Write([]byte(parsed))

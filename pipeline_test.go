@@ -21,13 +21,13 @@ func TestMultiReader(t *testing.T) {
 		pipeline.MultiProcess(
 			pipeline.ParseLine(
 				pipeline.ToWriter(&w1, pipeline.Copy),
-				func(line string) (string, error) {
-					return line + "lel", nil
+				func(line string) ([]byte, error) {
+					return []byte(line + "lel"), nil
 				}),
 			pipeline.ParseLine(
 				pipeline.ToWriter(&w2, pipeline.Copy),
-				func(line string) (string, error) {
-					return line + "lul", nil
+				func(line string) ([]byte, error) {
+					return []byte(line + "lul"), nil
 				}),
 		)))
 

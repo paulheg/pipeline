@@ -25,7 +25,7 @@ type InputBuilder interface {
 	OutputBuilder
 
 	// parsing
-	ParseLines(parser LineParser[string]) InputBuilder
+	ParseLines(parser LineParser[[]byte]) InputBuilder
 	ParseLinesToGob(parser LineParser[interface{}]) InputBuilder
 	ParseLinesToJson(parser LineParser[interface{}]) InputBuilder
 

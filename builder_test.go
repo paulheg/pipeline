@@ -190,9 +190,9 @@ func TestReadonly(t *testing.T) {
 
 	pipe := pipeline.Build().
 		FromReader(reader, reader.Size()).
-		ParseLines(func(line string) (string, error) {
+		ParseLines(func(line string) ([]byte, error) {
 			counter++
-			return line, nil
+			return []byte(line), nil
 		}).
 		ReadOnly().Build()
 
@@ -211,8 +211,8 @@ func TestFanout_WithLineParser(t *testing.T) {
 
 	pipe := pipeline.Build().
 		FromReader(reader, int64(reader.Len())).
-		ParseLines(func(line string) (string, error) {
-			return line + "er", nil
+		ParseLines(func(line string) ([]byte, error) {
+			return []byte(line + "er"), nil
 		}).
 		Fanout().
 		Register(func(output pipeline.OutputBuilder) pipeline.Pipeline {
@@ -275,8 +275,8 @@ func TestPreambleAndAppendix(t *testing.T) {
 			var b strings.Builder
 
 			err := pipeline.Build().FromReader(r, r.Size()).
-				ParseLines(func(line string) (string, error) {
-					return line + "a", nil
+				ParseLines(func(line string) ([]byte, error) {
+					return []byte(line + "a"), nil
 				}).
 				ToWriter(&b).
 				Preamble(tC.preamble).

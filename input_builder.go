@@ -9,7 +9,7 @@ type inputBuilder struct {
 	inputStrategyWithSize consumeReaderWithSize
 	progressBar           ProgressBarRegistrator
 
-	lineParser     LineParser[string]
+	lineParser     LineParser[[]byte]
 	lineParserGob  LineParser[interface{}]
 	lineParserJson LineParser[interface{}]
 
@@ -92,7 +92,7 @@ func (i *inputBuilder) DecompressGzip(enable bool) InputBuilder {
 }
 
 // ParseLines implements PipelineInput.
-func (i *inputBuilder) ParseLines(parser LineParser[string]) InputBuilder {
+func (i *inputBuilder) ParseLines(parser LineParser[[]byte]) InputBuilder {
 	i.lineParser = parser
 	return i
 }
