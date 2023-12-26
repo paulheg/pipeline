@@ -4,7 +4,6 @@ go 1.21.5
 
 require (
 	github.com/klauspost/compress v1.17.4
-	github.com/paulheg/kit_bachelor/importer v0.0.0-20231219130418-7d1c305727e8
 	github.com/stretchr/testify v1.8.4
 )
 
