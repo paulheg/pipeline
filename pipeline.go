@@ -98,12 +98,17 @@ func Appendix(next Reader, appendix string) Reader {
 	}
 }
 
-func ParseLineToGob(next Reader, p LineParser[interface{}]) Reader {
+type NewEncoder func(w io.Writer) Encoder
+type Encoder interface {
+	Encode(e any) error
+}
+
+func encode(encoder NewEncoder, next Reader, p LineParser[interface{}]) Reader {
 	return func(r io.Reader) error {
 		scanner := bufio.NewScanner(r)
 		reader, writer := io.Pipe()
 
-		enc := gob.NewEncoder(writer)
+		enc := encoder(writer)
 
 		go func() {
 			defer writer.Close()
@@ -127,89 +132,62 @@ func ParseLineToGob(next Reader, p LineParser[interface{}]) Reader {
 	}
 }
 
+func ParseLineToGob(next Reader, p LineParser[interface{}]) Reader {
+	return encode(func(w io.Writer) Encoder {
+		return gob.NewEncoder(w)
+	}, next, p)
+}
+
 func ParseLineToJson(next Reader, p LineParser[interface{}]) Reader {
-	return func(r io.Reader) error {
-		scanner := bufio.NewScanner(r)
-		reader, writer := io.Pipe()
+	return encode(func(w io.Writer) Encoder {
+		return json.NewEncoder(w)
+	}, next, p)
+}
 
-		enc := json.NewEncoder(writer)
+type NewDecoder func(r io.Reader) Decoder
 
-		go func() {
-			defer writer.Close()
-			for scanner.Scan() {
-				line := scanner.Text()
+type Decoder interface {
+	Decode(e any) error
+}
 
-				parsed, err := p(line)
-				if err != nil {
-					// write error
+func decode[I any](decoder NewDecoder, consumer func(*I) []byte) Processor {
+	return func(next Reader) Reader {
+		return func(r io.Reader) error {
+			decoder := decoder(r)
+			reader, writer := io.Pipe()
+
+			go func() {
+				defer writer.Close()
+				var err error
+				var input I
+				for {
+					err = decoder.Decode(&input)
+					if err == io.EOF {
+						break
+					} else if err != nil {
+						log.Printf("error while decoding: %v", err)
+						break
+					}
+					out := consumer(&input)
+					writer.Write(out)
 				}
+			}()
 
-				err = enc.Encode(parsed)
-				if err != nil {
-					log.Printf("error encoding: %v", err)
-					writer.CloseWithError(err)
-				}
-			}
-		}()
-
-		return next(reader)
+			return next(reader)
+		}
 	}
 }
 
 func DecodeGob[I any](consumer func(*I) []byte) Processor {
-	return func(next Reader) Reader {
-		return func(r io.Reader) error {
-			decoder := gob.NewDecoder(r)
-			reader, writer := io.Pipe()
-
-			go func() {
-				defer writer.Close()
-				var err error
-				var input I
-				for {
-					err = decoder.Decode(&input)
-					if err == io.EOF {
-						break
-					} else if err != nil {
-						log.Printf("error while decoding: %v", err)
-						break
-					}
-					out := consumer(&input)
-					writer.Write(out)
-				}
-			}()
-
-			return next(reader)
-		}
-	}
+	return decode(func(r io.Reader) Decoder {
+		return gob.NewDecoder(r)
+	}, consumer)
 }
 
 func DecodeJson[I any](consumer func(*I) []byte) Processor {
-	return func(next Reader) Reader {
-		return func(r io.Reader) error {
-			decoder := json.NewDecoder(r)
-			reader, writer := io.Pipe()
-
-			go func() {
-				defer writer.Close()
-				var input I
-				var err error
-				for {
-					err = decoder.Decode(&input)
-					if err == io.EOF {
-						break
-					} else if err != nil {
-						log.Printf("error while decoding: %v", err)
-						break
-					}
-					out := consumer(&input)
-					writer.Write(out)
-				}
-			}()
-
-			return next(reader)
-		}
-	}
+	return decode(func(r io.Reader) Decoder {
+		return json.NewDecoder(r)
+	}, consumer)
 }
 
 func ParseLine(next Reader, p LineParser[[]byte]) Reader {
