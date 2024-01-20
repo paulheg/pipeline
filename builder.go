@@ -5,7 +5,7 @@ import (
 )
 
 func Build() Builder {
-	return &inputBuilder{}
+	return newInputBuilder()
 }
 
 type Builder interface {
@@ -17,6 +17,8 @@ type Builder interface {
 type InputBuilder interface {
 	// Enable decompression of the input with gzip
 	DecompressGzip(enable bool) InputBuilder
+
+	Decode(decoder Processor) InputBuilder
 
 	// Add a ProgressBar to the pipeline
 	// The io.Writer will get updated

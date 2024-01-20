@@ -1,6 +1,7 @@
 package pipeline_test
 
 import (
+	"encoding/json"
 	"io"
 	"strings"
 	"testing"
@@ -287,6 +288,31 @@ func TestPreambleAndAppendix(t *testing.T) {
 			assert.Equal(t, tC.expected, b.String())
 		})
 	}
+}
+
+func TestFileDecoding(t *testing.T) {
+
+	testDict := map[string]string{
+		"Key1": "Value",
+		"Key2": "Value",
+		"Key3": "Value",
+		"Key4": "Value",
+	}
+
+	jsonBytes, err := json.Marshal(testDict)
+	assert.Nil(t, err)
+
+	r := strings.NewReader(string(jsonBytes))
+
+	pipeline.Build().FromReader(r, r.Size()).Decode(pipeline.DecodeJson[map[string]string](func(m *map[string]string) []byte {
+		mm := *m
+
+		assert.Equal(t, mm["Key1"], "Value")
+		assert.Equal(t, mm["Key2"], "Value")
+		assert.Equal(t, mm["Key3"], "Value")
+
+		return []byte{}
+	})).ReadOnly().Build().Execute()
 }
 
 func BenchmarkBuilder(b *testing.B) {

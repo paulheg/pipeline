@@ -9,11 +9,19 @@ import (
 var _ InputBuilder = &inputBuilder{}
 var _ Builder = &inputBuilder{}
 
+func newInputBuilder() *inputBuilder {
+	return &inputBuilder{
+		decoder: make([]Processor, 0),
+	}
+}
+
 type inputBuilder struct {
 	inputStrategyWithSize consumeReaderWithSize
 	progressBar           ProgressBarRegistrator
 
 	lineParser LineParser[[]byte]
+
+	decoder []Processor
 
 	parser  LineParser[interface{}]
 	encoder NewEncoder
@@ -31,6 +39,13 @@ func (i *inputBuilder) build(next Reader) ReaderWithSize {
 		next = ParseLine(next, i.lineParser)
 	}
 
+	// apply decoder in reverse order to match order
+	// to execute the in the order they were added to the pipeline
+	for j := len(i.decoder) - 1; j >= 0; j-- {
+		d := i.decoder[j]
+		next = d(next)
+	}
+
 	if i.gzipDecompress {
 		next = DecompressGzip(next)
 	}
@@ -45,6 +60,12 @@ func (i *inputBuilder) build(next Reader) ReaderWithSize {
 	}
 
 	return runWithSize
+}
+
+// Decode implements InputBuilder.
+func (i *inputBuilder) Decode(decoder Processor) InputBuilder {
+	i.decoder = append(i.decoder, decoder)
+	return i
 }
 
 // ParseLinesToCustomEncoder implements InputBuilder.
