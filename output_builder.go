@@ -5,6 +5,7 @@ import "io"
 var _ OutputBuilder = &outputBuilder{}
 var _ OutputConfigurationBuilder = &outputBuilder{}
 var _ Pipeline = &outputBuilder{}
+var _ ReadonlyBuilder = &outputBuilder{}
 
 func newOutputBuilder(in *input) *outputBuilder {
 
@@ -44,6 +45,13 @@ type outputBuilder struct {
 
 	// pipeline to execute
 	pipeline func() error
+}
+
+// AddReadonlyProcessor implements ReadonlyBuilder.
+func (o *outputBuilder) AddReadonlyProcessor(p Processor) ReadonlyBuilder {
+	o.AddProcessingStep(p)
+
+	return o
 }
 
 // AddProcessingStep implements OutputConfigurationBuilder.

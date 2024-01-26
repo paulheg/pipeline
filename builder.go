@@ -36,6 +36,7 @@ type InputBuilder interface {
 }
 
 type ReadonlyBuilder interface {
+	AddReadonlyProcessor(p Processor) ReadonlyBuilder
 	Build() Pipeline
 }
 
