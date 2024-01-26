@@ -151,14 +151,15 @@ func (i *inputBuilder) Fanout() FanoutBuilder {
 	return f
 }
 
-// ReadOnly implements PipelineInput.
+// ReadOnly implements InputBuilder.
 func (i *inputBuilder) ReadOnly() ReadonlyBuilder {
-	r := newReadonlyBuilder(input{
+	out := newOutputBuilder(&input{
 		processing: i.build,
 		source:     i.inputStrategyWithSize,
 	})
+	out.ReadOnly()
 
-	return r
+	return out
 }
 
 // ToFile implements PipelineInput.

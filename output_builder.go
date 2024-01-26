@@ -116,6 +116,16 @@ func (o *outputBuilder) Preamble(preamble string) OutputConfigurationBuilder {
 	return o
 }
 
+// ReadOnly implements PipelineInput.
+func (o *outputBuilder) ReadOnly() ReadonlyBuilder {
+
+	o.outputStep = func(next Connector) Reader {
+		return Readonly(next)
+	}
+
+	return o
+}
+
 // ToFile implements MakeOutputPipeline.
 func (o *outputBuilder) ToFile(path string) OutputConfigurationBuilder {
 	o.outputStep = func(next Connector) Reader {

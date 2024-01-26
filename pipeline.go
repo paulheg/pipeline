@@ -201,6 +201,12 @@ func ParseLine(next Reader, p LineParser[[]byte]) Reader {
 	}
 }
 
+func Readonly(before Connector) Reader {
+	return func(r io.Reader) error {
+		return before(io.Discard, r)
+	}
+}
+
 func ToWriter(w io.Writer, before Connector) Reader {
 	return func(r io.Reader) error {
 		return before(w, r)

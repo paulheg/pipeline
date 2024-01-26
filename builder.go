@@ -33,9 +33,6 @@ type InputBuilder interface {
 	ParseLinesToCustomEncoder(encoder NewEncoder, parser LineParser[interface{}]) InputBuilder
 
 	Fanout() FanoutBuilder
-
-	// Only read the pipeline
-	ReadOnly() ReadonlyBuilder
 }
 
 type ReadonlyBuilder interface {
@@ -43,6 +40,9 @@ type ReadonlyBuilder interface {
 }
 
 type OutputBuilder interface {
+	// Only read the pipeline
+	ReadOnly() ReadonlyBuilder
+
 	// Output the pipeline into a file
 	ToFile(path string) OutputConfigurationBuilder
 
