@@ -219,6 +219,18 @@ func ToFile(file *os.File, before Connector) Reader {
 	}
 }
 
+func AppendToFile(path string, before Connector) Reader {
+	return func(r io.Reader) error {
+		file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		return before(file, r)
+	}
+}
+
 func ToNewFile(path string, before Connector) Reader {
 	return func(r io.Reader) error {
 		file, err := os.Create(path)

@@ -47,6 +47,9 @@ type OutputBuilder interface {
 	// Output the pipeline into a file
 	ToFile(path string) OutputConfigurationBuilder
 
+	// Output the pipeline into a new file or if exists append to it
+	AppendToFile(path string) OutputConfigurationBuilder
+
 	// Output the pipeline into any io.Writer
 	ToWriter(w io.Writer) OutputConfigurationBuilder
 }

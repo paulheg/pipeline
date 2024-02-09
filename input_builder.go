@@ -173,6 +173,17 @@ func (i *inputBuilder) ToFile(path string) OutputConfigurationBuilder {
 	return out
 }
 
+// AppendToFile implements InputBuilder.
+func (i *inputBuilder) AppendToFile(path string) OutputConfigurationBuilder {
+	out := newOutputBuilder(&input{
+		processing: i.build,
+		source:     i.inputStrategyWithSize,
+	})
+	out.AppendToFile(path)
+
+	return out
+}
+
 // ToWriter implements PipelineInput.
 func (i *inputBuilder) ToWriter(w io.Writer) OutputConfigurationBuilder {
 	out := newOutputBuilder(&input{

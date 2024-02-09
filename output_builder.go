@@ -143,6 +143,15 @@ func (o *outputBuilder) ToFile(path string) OutputConfigurationBuilder {
 	return o
 }
 
+// AppendToFile implements OutputBuilder.
+func (o *outputBuilder) AppendToFile(path string) OutputConfigurationBuilder {
+	o.outputStep = func(next Connector) Reader {
+		return AppendToFile(path, next)
+	}
+
+	return o
+}
+
 // ToWriter implements MakeOutputPipeline.
 func (o *outputBuilder) ToWriter(w io.Writer) OutputConfigurationBuilder {
 	o.outputStep = func(next Connector) Reader {
