@@ -29,7 +29,7 @@ type Connector func(io.Writer, io.Reader) error
 func FromFile(path string, next ReaderWithSize) error {
 	file, err := os.Open(path)
 	if err != nil {
-		return nil
+		return err
 	}
 	defer file.Close()
 
