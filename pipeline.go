@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/gob"
 	"encoding/json"
+	"encoding/xml"
 	"io"
 	"log"
 	"net/http"
@@ -175,6 +176,12 @@ func DecodeGob[I any](consumer func(*I) []byte) Processor {
 func DecodeJson[I any](consumer func(*I) []byte) Processor {
 	return Decode(func(r io.Reader) Decoder {
 		return json.NewDecoder(r)
+	}, consumer)
+}
+
+func DecodeXML[I any](consumer func(*I) []byte) Processor {
+	return Decode(func(r io.Reader) Decoder {
+		return xml.NewDecoder(r)
 	}, consumer)
 }
 
