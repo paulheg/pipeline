@@ -104,6 +104,35 @@ type Encoder interface {
 	Encode(e any) error
 }
 
+func Transcode[I any](decoder NewDecoder, encoder NewEncoder, consumer func(*I) []byte) Processor {
+	return func(next Reader) Reader {
+		return func(r io.Reader) error {
+			dec := decoder(r)
+			reader, writer := io.Pipe()
+			enc := encoder(writer)
+
+			go func() {
+				defer writer.Close()
+				var err error
+				var input I
+				for {
+					err = dec.Decode(&input)
+					if err == io.EOF {
+						break
+					} else if err != nil {
+						log.Printf("error while decoding: %v", err)
+						break
+					}
+					out := consumer(&input)
+					enc.Encode(out)
+				}
+			}()
+
+			return next(reader)
+		}
+	}
+}
+
 func ParseLineToCustomEncoder(encoder NewEncoder, next Reader, p LineParser[interface{}]) Reader {
 	return func(r io.Reader) error {
 		scanner := bufio.NewScanner(r)
