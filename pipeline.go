@@ -104,7 +104,7 @@ type Encoder interface {
 	Encode(e any) error
 }
 
-func Transcode[I any](decoder NewDecoder, encoder NewEncoder, consumer func(*I) []byte) Processor {
+func Transcode[I any](decoder NewDecoder, encoder NewEncoder, consumer func(*I) any) Processor {
 	return func(next Reader) Reader {
 		return func(r io.Reader) error {
 			dec := decoder(r)
