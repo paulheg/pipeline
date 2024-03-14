@@ -167,6 +167,39 @@ func Decode[I any](decoder NewDecoder, consumer func(*I) []byte) Processor {
 	}
 }
 
+func DecodeToWriter[I any](decoder NewDecoder, consumer func(*I, io.Writer)) Processor {
+	return func(next Reader) Reader {
+		return func(r io.Reader) error {
+			decoder := decoder(r)
+			reader, writer := io.Pipe()
+
+			go func() {
+				defer writer.Close()
+				var err error
+				var input I
+				for {
+					err = decoder.Decode(&input)
+					if err == io.EOF {
+						break
+					} else if err != nil {
+						log.Printf("error while decoding: %v", err)
+						break
+					}
+					consumer(&input, writer)
+				}
+			}()
+
+			return next(reader)
+		}
+	}
+}
+
+func DecodeGobToWriter[I any](consumer func(*I, io.Writer)) Processor {
+	return DecodeToWriter(func(r io.Reader) Decoder {
+		return gob.NewDecoder(r)
+	}, consumer)
+}
+
 func DecodeGob[I any](consumer func(*I) []byte) Processor {
 	return Decode(func(r io.Reader) Decoder {
 		return gob.NewDecoder(r)
