@@ -124,7 +124,10 @@ func Transcode[I any](decoder NewDecoder, encoder NewEncoder, consumer func(*I) 
 						break
 					}
 					out := consumer(&input)
-					enc.Encode(out)
+					err = enc.Encode(out)
+					if err != nil {
+						log.Printf("error while encoding: %v", err)
+					}
 				}
 			}()
 

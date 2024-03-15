@@ -1,6 +1,7 @@
 package pipeline_test
 
 import (
+	"encoding/gob"
 	"encoding/json"
 	"io"
 	"strings"
@@ -288,6 +289,32 @@ func TestPreambleAndAppendix(t *testing.T) {
 			assert.Equal(t, tC.expected, b.String())
 		})
 	}
+}
+
+func TestTranscode(t *testing.T) {
+
+	r := strings.NewReader("test\ntest2\ntest3")
+	expected := `"prefix_test"
+"prefix_test2"
+"prefix_test3"
+`
+	var w strings.Builder
+
+	p := pipeline.Build().FromReader(r, int64(r.Len())).ParseLinesToGob(func(line string) (interface{}, error) {
+		return line, nil
+	}).ToWriter(&w).AddProcessingStep(pipeline.Transcode(func(r io.Reader) pipeline.Decoder {
+		return gob.NewDecoder(r)
+	}, func(w io.Writer) pipeline.Encoder {
+		return json.NewEncoder(w)
+	}, func(i *string) any {
+		return "prefix_" + *i
+	})).Build()
+
+	err := p.Execute()
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, w.String())
+	t.Log(w.String())
 }
 
 func TestFileDecoding(t *testing.T) {
